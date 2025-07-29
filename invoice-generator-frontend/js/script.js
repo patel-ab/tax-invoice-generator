@@ -68,7 +68,7 @@ function renderFileList() {
 // Handle invoice generation
 document.getElementById("generate-btn").addEventListener("click", function () {
     const location = document.getElementById("location").value;
-    if (!location || items.length === 0) {
+    if (!location || (items.length === 0 && files.length===0)) {
         alert("Please fill location and add at least one item.");
         return;
     }

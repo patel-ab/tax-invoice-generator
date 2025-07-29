@@ -47,7 +47,7 @@ public class InvoiceController {
             throw new RuntimeException("Failed to parse items JSON", e);
         }
 
-        InvoiceRequest request = new InvoiceRequest(location, items, files); // Create this constructor or set manually
+        InvoiceRequest request = new InvoiceRequest(location, items, files);
 
         byte[] pdfBytes = invoiceService.generateInvoicePdf(request);
 
