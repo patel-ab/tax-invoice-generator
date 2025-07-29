@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import tax_generator.tax_generator.model.InvoiceRequest;
 import tax_generator.tax_generator.model.Item;
+import tax_generator.tax_generator.service.GoogleOcrService;
 import tax_generator.tax_generator.service.InvoiceService;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,9 @@ public class InvoiceController {
 
     @Autowired
     private final InvoiceService invoiceService;
+
+    @Autowired
+    private GoogleOcrService googleOcrService;
 
     public InvoiceController(InvoiceService invoiceService) {
         this.invoiceService = invoiceService;
@@ -57,4 +61,36 @@ public class InvoiceController {
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
-}
+
+
+    @PostMapping(value = "/generate-google", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CrossOrigin("*")
+    public ResponseEntity<byte[]> generateViaGoogle(
+            @RequestPart("location") String location,
+            @RequestPart("items") MultipartFile itemsJson,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+
+        try {
+
+            List<Item> items = new ObjectMapper().readValue(itemsJson.getInputStream(), new TypeReference<List<Item>>() {});
+
+            if (files != null && !files.isEmpty()) {
+                List<Item> ocrItems = googleOcrService.extractItemsFromFiles(files);
+                items.addAll(ocrItems);
+            }
+
+            InvoiceRequest request = new InvoiceRequest(location, items, files);
+            byte[] pdfBytes = invoiceService.generateInvoicePdf(request);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "invoice_google.pdf");
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    }
+

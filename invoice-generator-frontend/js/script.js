@@ -1,7 +1,6 @@
 let items = [];
 let files = [];
 
-// Handle item addition
 document.getElementById("invoice-form").addEventListener("submit", function (e) {
     e.preventDefault();
     const itemName = document.getElementById("itemName").value;
@@ -40,12 +39,10 @@ function removeItem(index) {
     renderTable();
 }
 
-// Handle file input
 document.getElementById("fileInput").addEventListener("change", function () {
-    const selectedFiles = Array.from(this.files);
-    files = [...files, ...selectedFiles];
+    files = [...files, ...Array.from(this.files)];
     renderFileList();
-    this.value = ""; // allow selecting same file again
+    this.value = "";
 });
 
 function renderFileList() {
@@ -54,54 +51,59 @@ function renderFileList() {
     files.forEach((file, index) => {
         const li = document.createElement("li");
         li.textContent = file.name;
-        const removeBtn = document.createElement("button");
-        removeBtn.textContent = "Remove";
-        removeBtn.onclick = () => {
+        const btn = document.createElement("button");
+        btn.textContent = "Remove";
+        btn.onclick = () => {
             files.splice(index, 1);
             renderFileList();
         };
-        li.appendChild(removeBtn);
+        li.appendChild(btn);
         list.appendChild(li);
     });
 }
 
-// Handle invoice generation
-document.getElementById("generate-btn").addEventListener("click", function () {
+function generateInvoice(endpoint) {
     const location = document.getElementById("location").value;
-    if (!location || (items.length === 0 && files.length===0)) {
-        alert("Please fill location and add at least one item.");
+    if (!location || (items.length === 0 && files.length === 0)) {
+        alert("Please enter a location and add at least one item or file.");
         return;
     }
 
     const formData = new FormData();
     formData.append("location", location);
     formData.append("items", new Blob([JSON.stringify(items)], { type: "application/json" }));
+    files.forEach(file => formData.append("files", file));
 
-    files.forEach(file => {
-        formData.append("files", file);
-    });
-
-    fetch("http://localhost:8080/api/invoice/generate", {
+    fetch(endpoint, {
         method: "POST",
         body: formData
     })
         .then(response => {
-            if (!response.ok) throw new Error("Failed to generate invoice");
+            if (!response.ok) throw new Error("Invoice generation failed");
             return response.blob();
         })
         .then(blob => {
-            const url = window.URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
             a.download = "invoice.pdf";
             document.body.appendChild(a);
             a.click();
             a.remove();
-            window.URL.revokeObjectURL(url);
-            document.getElementById("result").innerHTML = `<p>Invoice downloaded!</p>`;
+            URL.revokeObjectURL(url);
+            document.getElementById("result").innerHTML = "<p>Invoice downloaded!</p>";
         })
         .catch(error => {
-            console.error("Error:", error);
-            document.getElementById("result").innerHTML = `<p>Something went wrong.</p>`;
+            console.error(error);
+            document.getElementById("result").innerHTML = "<p>Error generating invoice.</p>";
         });
+}
+
+
+document.getElementById("generate-btn-tess").addEventListener("click", function () {
+    generateInvoice("http://localhost:8080/api/invoice/generate");
+});
+
+document.getElementById("generate-btn-gcp").addEventListener("click", function () {
+    generateInvoice("http://localhost:8080/api/invoice/generate-google");
 });

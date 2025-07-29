@@ -9,13 +9,11 @@
 <div class="container">
     <h1>Invoice Generator</h1>
 
-    <!-- Location input -->
     <div class="form-group">
         <label for="location">State (Location)</label>
         <input type="text" id="location" placeholder="e.g. MI" required>
     </div>
 
-    <!-- Item form -->
     <form id="invoice-form">
         <div class="form-group">
             <label for="itemName">Item Name</label>
@@ -32,7 +30,6 @@
         <button type="submit">Add Item</button>
     </form>
 
-    <!-- Items table -->
     <h2>Items</h2>
     <table id="items-table">
         <thead>
@@ -47,13 +44,14 @@
         <tbody></tbody>
     </table>
 
-    <!-- File upload -->
     <h2>Upload Bills (PDF or PNG)</h2>
-    <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg">
+    <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg">
     <ul id="file-list"></ul>
 
-    <!-- Submit -->
-    <button type="button" id="generate-btn">Generate Invoice</button>
+    <!-- Submit buttons -->
+    <button type="button" id="generate-btn-tess">Generate via Tesseract</button>
+    <button type="button" id="generate-btn-gcp">Generate via Google</button>
+
     <div id="result"></div>
 </div>
 
