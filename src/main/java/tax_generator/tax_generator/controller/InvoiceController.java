@@ -16,6 +16,7 @@ import tax_generator.tax_generator.service.GoogleOcrService;
 import tax_generator.tax_generator.service.InvoiceService;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import tax_generator.tax_generator.service.TessOcrService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,14 +27,18 @@ import java.util.List;
 @RequestMapping("/api/invoice")
 public class InvoiceController {
 
-    @Autowired
     private final InvoiceService invoiceService;
+    private final TessOcrService tessOcrService;
+    private final GoogleOcrService googleOcrService;
 
     @Autowired
-    private GoogleOcrService googleOcrService;
-
-    public InvoiceController(InvoiceService invoiceService) {
+    public InvoiceController(
+            InvoiceService invoiceService,
+            TessOcrService tessOcrService,
+            GoogleOcrService googleOcrService) {
         this.invoiceService = invoiceService;
+        this.tessOcrService = tessOcrService;
+        this.googleOcrService = googleOcrService;
     }
 
 
@@ -49,6 +54,15 @@ public class InvoiceController {
             items = new ObjectMapper().readValue(is, new TypeReference<List<Item>>() {});
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse items JSON", e);
+        }
+
+        if (files != null && !files.isEmpty()){
+            try {
+                List<Item> extractedItems = tessOcrService.extractItemsFromFiles(files);
+                items.addAll(extractedItems);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         InvoiceRequest request = new InvoiceRequest(location, items, files);
@@ -75,8 +89,12 @@ public class InvoiceController {
             List<Item> items = new ObjectMapper().readValue(itemsJson.getInputStream(), new TypeReference<List<Item>>() {});
 
             if (files != null && !files.isEmpty()) {
-                List<Item> ocrItems = googleOcrService.extractItemsFromFiles(files);
-                items.addAll(ocrItems);
+                try {
+                    List<Item> ocrItems = googleOcrService.extractItemsFromFiles(files);
+                    items.addAll(ocrItems);
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             InvoiceRequest request = new InvoiceRequest(location, items, files);

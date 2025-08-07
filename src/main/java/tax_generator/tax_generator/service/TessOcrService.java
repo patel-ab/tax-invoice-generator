@@ -1,7 +1,9 @@
-package tax_generator.tax_generator.util;
+package tax_generator.tax_generator.service;
 
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tax_generator.tax_generator.model.Item;
 
@@ -12,32 +14,20 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class OcrUtil {
+@Service
+public class TessOcrService {
 
-    private static final Tesseract tesseract = new Tesseract();
+    private final Tesseract tesseract;
 
-    static {
-
-        tesseract.setDatapath("Add Path here to tess data"); // Add Path here to tessdata
-        tesseract.setLanguage("eng");
+    public TessOcrService(
+            @Value("${TESS_DATA_PATH}") String tessDataPath,
+            @Value("${TESS_LANGUAGE}") String tessLanguage) {
+        tesseract = new Tesseract();
+        tesseract.setDatapath(tessDataPath);
+        tesseract.setLanguage(tessLanguage);
     }
 
-    public static List<String> extractTextFromFiles(List<MultipartFile> files) throws IOException, TesseractException {
-        List<String> extractedTexts = new ArrayList<>();
-
-        for (MultipartFile file : files) {
-            File temp = File.createTempFile("ocr-", file.getOriginalFilename());
-            file.transferTo(temp);
-            String result = tesseract.doOCR(temp);
-            extractedTexts.add(result);
-            temp.delete();
-        }
-
-        return extractedTexts;
-    }
-
-
-    public static List<Item> extractItemsFromFiles(List<MultipartFile> files) throws IOException, TesseractException {
+    public List<Item> extractItemsFromFiles(List<MultipartFile> files) throws IOException, TesseractException {
         List<Item> items = new ArrayList<>();
 
         for (MultipartFile file : files) {

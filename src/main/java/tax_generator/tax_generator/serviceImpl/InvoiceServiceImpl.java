@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import tax_generator.tax_generator.model.InvoiceRequest;
 import tax_generator.tax_generator.model.Item;
 import tax_generator.tax_generator.service.InvoiceService;
-import tax_generator.tax_generator.util.OcrUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.text.DecimalFormat;
@@ -38,7 +37,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     public byte[] generateInvoicePdf(InvoiceRequest request) {
-        mergeOcrItemsIfPresent(request);
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(baos);
@@ -58,20 +56,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to generate PDF", e);
-        }
-    }
-
-    private void mergeOcrItemsIfPresent(InvoiceRequest request) {
-        if (request.getFiles() != null && !request.getFiles().isEmpty()) {
-            try {
-                List<Item> extractedItems = OcrUtil.extractItemsFromFiles(request.getFiles());
-                for (Item i : extractedItems) {
-                    System.out.println("OCR Item -> Name: " + i.getItemName() + ", Qty: " + i.getQuantity() + ", Amt: " + i.getAmount());
-                }
-                request.getItems().addAll(extractedItems);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
 
